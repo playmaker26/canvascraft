@@ -1,0 +1,72 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  background-color: #0d0d0d;
+  align-items: center; /* Vertically centers the content in the header */
+  padding: 10px; /* Optional: Adds padding around the content */
+}
+
+header figure {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100px;
+  gap: 0;
+  margin: 0 0 0 25px;
+}
+
+header figure img {
+  width: 100%;
+}
+
+header figure figcaption {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+header figure figcaption a {
+  color: #fff;
+  font-weight: bold;
+  font-size: 20px;
+  font-family: Poppins;
+  text-decoration: none;
+}
+
+main nav ul {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  background-color: #22ddf2;
+  width: 150px;
+  gap: 25px;
+  list-style: none;
+}
+
+main nav ul li {
+  display: flex;
+  gap: 10px;
+}
+
+main nav ul li article {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+main nav ul li article figure {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+main nav ul li article figure figcaption {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="shortcut icon" href="favicon/favicon.png" type="image/png" />
+    <link rel="stylesheet" href="font-6/css/all.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="js/script.js" defer></script>
+    <title>CanvasCraft</title>
+  </head>
+  <body>
+    <header class="header">
+      <figure class="header__logo">
+        <img src="logo/logo.png" alt="CanvasCraft Logo" />
+        <figcaption>
+          <a href="index.html">CanvasCraft</a>
+        </figcaption>
+      </figure>
+    </header>
+
+    <main class="main-content">
+      <nav class="sidebar">
+        <ul class="tool-list">
+          <li class="tool-item">
+            <i class="fas fa-pencil" aria-label="Pencil Tool"></i>
+            <p>Pencil Tool</p>
+          </li>
+          <li class="tool-item">
+            <i class="fas fa-eraser" aria-label="Eraser Tool"></i>
+            <p>Eraser Tool</p>
+          </li>
+          <li class="tool-item">
+            <i class="fas fa-shapes" aria-label="Shape Tool"></i>
+            <p>Shape Tool</p>
+          </li>
+          <li class="tool-item">
+            <i class="fas fa-palette" aria-label="Color Tool"></i>
+            <p>Color Tool</p>
+          </li>
+          <li class="tool-item">
+            <i class="fas fa-fill" aria-label="Fill Tool"></i>
+            <p>Fill Tool</p>
+          </li>
+          <li class="tool-item">
+            <i class="fas fa-font" aria-label="Text Tool"></i>
+            <p>Text Tool</p>
+          </li>
+          <li class="tool-item">
+            <i class="fas fa-undo" aria-label="Undo"></i>
+            <p>Undo</p>
+          </li>
+          <li class="tool-item">
+            <i class="fas fa-redo" aria-label="Redo"></i>
+            <p>Redo</p>
+          </li>
+          <li class="tool-item">
+            <i class="fas fa-trash" aria-label="Clear Canvas"></i>
+            <p>Clear Canvas</p>
+          </li>
+          <li class="tool-item">
+            <i class="fas fa-search-plus" aria-label="Zoom In"></i>
+            <p>Zoom In</p>
+          </li>
+          <li class="tool-item">
+            <i class="fas fa-search-minus" aria-label="Zoom Out"></i>
+            <p>Zoom Out</p>
+          </li>
+        </ul>
+      </nav>
+
+      <section class="canvas-section">
+        <canvas id="drawingCanvas" aria-label="Drawing Area"></canvas>
+      </section>
+    </main>
+  </body>
+</html>
