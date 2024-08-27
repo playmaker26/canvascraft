@@ -74,6 +74,30 @@ function tools() {
         drawing = false;
         context.closePath();
     }
+
+    eraser.addEventListener('click', () => {
+        canvas.addEventListener('mousedown', startErasing);
+        canvas.addEventListener('mousemove', erase);
+        canvas.addEventListener('mouseup', stopErasing);
+        canvas.addEventListener('mouseout', stopErasing);
+
+        canvas.addEventListener('touchstart', startErasing);
+        canvas.addEventListener('touchmove', erase);
+        canvas.addEventListener('touchend', stopErasing);
+        canvas.addEventListener('touchcancel', stopErasing);
+    });
+
+    function startErasing() {
+
+    }
+
+    function erase() {
+
+    }
+
+    function stopErasing() {
+
+    }
 }
 
 tools();
