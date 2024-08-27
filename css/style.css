@@ -3,6 +3,11 @@
   padding: 0;
 }
 
+body {
+  margin: 0;
+  padding: 0;
+}
+
 .header {
   display: flex;
   background-color: #0d0d0d;
@@ -38,6 +43,40 @@ header figure figcaption a {
   text-decoration: none;
 }
 
+main section canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: #fff 1px solid;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  grid-template-areas: "nav section";
+  height: 100vh;
+}
+
+main nav {
+  width: 150px;
+  display: flex;
+  flex-direction: column;
+  grid-area: nav;
+}
+
+main section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  grid-area: section;
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+  border: 1px solid red;
+}
+
 main nav ul {
   display: flex;
   flex-direction: column;
@@ -53,20 +92,14 @@ main nav ul li {
   gap: 10px;
 }
 
-main nav ul li article {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
+main nav ul li i {
+  font-size: 18px;
+  color: #0d0d0d;
 }
 
-main nav ul li article figure {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-main nav ul li article figure figcaption {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+main nav ul li p {
+  font-weight: 500;
+  color: #0d0d0d;
+  font-family: "Open Sans";
+  font-size: 16px;
 }
