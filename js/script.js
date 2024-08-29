@@ -171,16 +171,86 @@ function tools() {
         drawing = false;
     }
 
-    function startShape(event) {
+    function activateShape() {
+        currentTool = 'shape';
+        modal();
 
+        document.querySelector('.apply').addEventListener('click', function(event) {
+            event.preventDefault();
+
+            shapeData = {
+                type: document.querySelector('.shape-select').value                
+            };
+
+            canvas.addEventListener('mousedown', startShape);
+            canvas.addEventListener('mousemove', drawShape);
+            canvas.addEventListener('mouseup', stopShape);
+            canvas.addEventListener('mouseout', stopShape);
+
+            canvas.addEventListener('touchstart', startShape);
+            canvas.addEventListener('touchmove', drawShape);
+            canvas.addEventListener('touchend', stopShape);
+            canvas.addEventListener('touchcancel', stopShape);
+        });
+    }
+
+    function startShape(event) {
+        drawing = true;
+        const pos = getEventPosition(event);
+        startX = pos.x;
+        startY = pos.y;
+        context.beginPath();
     }
 
     function drawShape(event) {
+        if(!drawing) return;
+        const pos = getEventPosition(event);
+        const width = pos.x - startX;
+        const height = pos.y - startY;
+        context.clearRect(0, 0, canvas.width, canvas.height);
 
+        switch (shapeData.type) {
+            case 'Circle':
+            const radius = Math.sqrt(width * width + height * height);
+            context.arc(startX, startY, radius, 0, 2 * Math.PI);
+            break;
+
+            case 'Triangle':
+                context.moveTo(startX, startY);
+                context.lineTo(startX + width, startY);
+                context.lineTo(startX + width / 2, startY - height);
+                context.closePath();
+                break;
+
+            case 'Rectangle':
+                context.rect(startX, startY, width, height);
+                break;
+            
+            case 'Diamond':
+                context.moveTo(startX, startY, + height / 2);
+                context.lineTo(startX + width / 2, startY);
+                context.lineTo(startX + width, startY + height / 2);
+                context.lineTo(startX + width / 2, startY + height);
+                context.closePath();
+                break;
+
+            case 'Oval':
+                context.ellipse(startX, startY, Math.abs(width) / 2, Math.abs(height) / 2, 0, 0, 2 * Math.PI);
+                break;
+
+            case 'Cone':
+                context.moveTo(startX, startY);
+                context.lineTo(startX + width / 2, startY - height);
+                context.lineTo(startX + width, startY);
+                context.closePath();
+                break;
+        }
+        context.stroke();
     }
 
     function stopShape() {
-
+        drawing = false; 
+        context.closePath();
     }
 
     function modal() {
@@ -192,25 +262,32 @@ function tools() {
         // Combining both shape and color sections into a single innerHTML assignment
         form.innerHTML = `
             <label>${shapeObject.label}</label>
-            <select>
+            <select class= 'shape-select'>
                 ${shapeObject.dropdown.map(shapes => `
                 <option>${shapes.option}</option>
                 `).join('')}
             </select>
     
-            <br><br>
-    
+            <label>${fontSize.labelFont}</label>  
+            <select class= 'font-select'>
+            ${fontSize.dropdown.map(fonts => `
+            <option>${fonts.option}</option>
+             `).join('')}
+            </select>
+               
             <label>${colorObject.labelDropdown}</label>
-            <select>
+            <select class= 'color-select'>
                 ${colorObject.dropdown.map(color => `
                 <option>${color.option}</option>
                 `).join('')}
             </select>
     
-            <br><br>
+          
     
             <label>${colorObject.labelInput}</label>
             <input type="text" placeholder="#000000">
+            <p>${colorObject.paragraph}</p>
+            <div class= 'preview-color font-size'></div>
             <div class= 'buttons'>
             <button class='apply'>Apply</button>
             <button class= 'cancel'>Cancel</button>
@@ -244,7 +321,27 @@ function tools() {
             {option: 'Grey'},
             {option: 'Blue'}
         ],
-        labelInput: 'Type hex code'
+        labelInput: 'Type hex code',
+        paragraph: 'Color preview'
+    };
+
+    let fontSize = {
+        labelFont: 'Choose a font size',
+        dropdown: [
+            {option: 'None'},
+            {option: '8px'},
+            {option: '10px'},
+            {option: '12px'},
+            {option: '14px'},
+            {option: '16px'},
+            {option: '18px'},
+            {option: '20px'},
+            {option: '24px'},
+            {option: '28px'},
+            {option: '32px'},
+            {option: '36px'},
+            {option: '40px'}
+        ]
     };
     
 }
