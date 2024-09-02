@@ -494,7 +494,13 @@ function stopPencil() {
             ctx.fill();
             ctx.stroke();
         } else if (selectShape === 'oval') {
-            ctx.ellipse(startX, startY, width / 2, height / 2, 0, 0, 2 * Math.PI);
+            // Ensure width and height are positive
+            let radiusX = Math.max(width / 2, 0);
+            let radiusY = Math.max(height / 2, 0);
+        
+            // Draw the ellipse
+            ctx.beginPath(); // Ensure a new path is started
+            ctx.ellipse(startX, startY, radiusX, radiusY, 0, 0, 2 * Math.PI);
             ctx.fill();
             ctx.stroke();
         } else if (selectShape === 'hexagon') {
