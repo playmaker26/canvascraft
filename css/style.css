@@ -74,7 +74,6 @@ main section {
 canvas {
   width: 100%;
   height: 100%;
-  border: 1px solid red;
 }
 
 main nav ul {
@@ -112,6 +111,9 @@ main nav ul li p {
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
   z-index: 999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 form {
@@ -120,4 +122,27 @@ form {
   justify-content: space-between;
   gap: 25px;
   background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 500px;
+}
+
+@media only screen and (max-width: 767px) {
+  form {
+    width: 100%;
+  }
+}
+
+@media only screen and (min-width: 768px) {
+  form {
+    width: 415px;
+  }
+}
+
+@media only screen and (min-width: 1000px) {
+  form {
+    width: 577px;
+  }
 }
