@@ -33,6 +33,7 @@ function tools() {
     let selectedColor = null;
     let selectedFontSize = null;
     let selectShape = 'none';
+    let selectColor = 'none';
     let startX, startY;
     
 // Fixed Event Listeners
@@ -528,16 +529,50 @@ function stopPencil() {
     }
 
         //color
-        function startColor(){
-
+        function isValidHexCode(color) {
+            // Check for a valid hex code, allows #RRGGBB or #RGB format
+            return /^#([0-9A-F]{3}){1,2}$/i.test(color);
         }
-    
-        function drawColor() {
-    
+        
+        function startColor(event) {
+            drawing = true;
+            const pos = getEventPosition(event);
+            context.beginPath();
+            context.moveTo(pos.x, pos.y);
+        
+            if (isValidHexCode(selectColor)) {
+                context.strokeStyle = selectColor;
+                context.fillStyle = selectColor;
+            } else {
+                const colorMap = {
+                    'none': '#000000',  // Default to black if 'none'
+                    'black': '#000000',
+                    'blue': '#0000FF',
+                    'orange': '#FFA500',
+                    'red': '#FF0000',
+                    'yellow': '#FFFF00',
+                    'green': '#00FF00'
+                };
+                context.strokeStyle = colorMap[selectColor] || '#000000'; // Default to black if invalid
+                context.fillStyle = colorMap[selectColor] || '#000000';
+            }
+        
+            event.preventDefault();
         }
-    
+        
+        function drawColor(event) {
+            if (!drawing) return;
+            const pos = getEventPosition(event);
+            context.lineTo(pos.x, pos.y);
+            context.stroke();
+            event.preventDefault();
+        }
+        
         function stopColor() {
-            
+            if (drawing) {
+                context.closePath();
+                drawing = false;
+            }
         }
 
             //fill
@@ -732,45 +767,62 @@ function modal(type) {
 
     // Query the elements after they have been added to the DOM
     let selectShapeElement = document.querySelector('.select-shape');
-    let selectColor = document.querySelector('.select-color');
-    let inputHex = document.querySelector('.input-hex');
+    const inputHex = document.querySelector('.input-hex');
+    const dropdownColor = document.querySelector('.select-color');
     let selectFont = document.querySelector('.select-font');
-
+let errorFound = false;
     // Add event listeners for buttons
     document.querySelector('.apply').addEventListener('click', () => {
-        let errorFound = false;
+        if(type === 'shape') {
+            if(selectShapeElement) {
+                if(selectShapeElement.value === 'none') {
+                    document.querySelector('.label-shape').innerHTML = 'Pick a shape';
+                    document.querySelector('.label-shape').style.color = 'red';
+                    errorFound = true;
+                }else {
+                    document.querySelector('.label-shape').textContent = shapeObject.label;
+                    document.querySelector('.label-shape').style.color = '';
+                    selectShape = selectShapeElement.value; // Capture the selected shape
+                    document.body.removeChild(overlay);
+                    activateShapeTool();
 
-        if (type === 'shape' && selectShapeElement.value === 'none') {
-            document.querySelector('.label-shape').textContent = 'Pick a shape';
-            document.querySelector('.label-shape').style.color = 'red';
-            errorFound = true;
-        } else if (type === 'color' && selectColor.value !== 'none' && inputHex.value.trim() !== '') {
-            alert('Please choose either a color from the dropdown or enter a hex code, not both.');
-            errorFound = true;
-        } else if (type === 'color' && (selectColor.value === 'none' && inputHex.value.trim() === '')) {
-            document.querySelector('.label-color').textContent = 'Pick a color';
-            document.querySelector('.label-color').style.color = 'red';
-            document.querySelector('.label-hex').textContent = 'Type a hex code';
-            document.querySelector('.label-hex').style.color = 'red';
-            errorFound = true;
-        } else if (type === 'text' && selectFont.value === 'none') {
-            document.querySelector('.label-font').textContent = 'Pick a font size';
-            document.querySelector('.label-font').style.color = 'red';
-            errorFound = true;
-        }
-
-        if (!errorFound) {
-            // Capture selected values
-            if (type === 'shape') {
-                selectShape = selectShapeElement.value || selectShape;
-                document.body.removeChild(overlay);
-                activateShapeTool(); // Activate shape tool after closing the modal
-            } else if (type === 'color') {
-                selectedColor = inputHex.value.trim() || selectColor.value || selectedColor;
-            } else if (type === 'text') {
-                selectedFontSize = selectFont.value || selectedFontSize;
+                }
             }
         }
+
+        if (type === 'color') {
+            if (dropdownColor && inputHex) {
+                // Check if both the dropdown and input field are not valid at the same time
+                if (dropdownColor.value === 'none' && inputHex.value.trim() === '') {
+                    document.querySelector('.label-color').innerHTML = 'Select a color';
+                    document.querySelector('.label-color').style.color = 'red';
+                    document.querySelector('.label-hex').innerHTML = 'Type a valid hex code';
+                    document.querySelector('.label-hex').style.color = 'red';
+                    errorFound = true;
+                } else {
+                    // Reset error styling
+                    document.querySelector('.label-color').textContent = colorObject.label;
+                    document.querySelector('.label-color').style.color = '';
+                    document.querySelector('.label-hex').textContent = colorObject.labelInput;
+                    document.querySelector('.label-hex').style.color = '';
+        
+                    // Apply the selected color
+                    if (dropdownColor.value !== 'none') {
+                        selectColor = dropdownColor.value;
+                    } else if (inputHex.value.trim() !== '') {
+                        selectColor = inputHex.value.trim();
+                    }
+        
+                    // Remove the modal and apply the color
+                    document.body.removeChild(overlay);
+                    activateColor();
+                }
+            }
+        }
+
+
+  
+        
     });
 
     document.querySelector('.cancel').addEventListener('click', () => {
@@ -778,10 +830,6 @@ function modal(type) {
         document.body.removeChild(overlay);
     });
 }
-
-
-
-
     
 }
 
