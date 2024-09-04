@@ -792,6 +792,10 @@ let errorFound = false;
 
         if (type === 'color') {
             if (dropdownColor && inputHex) {
+                if(dropdownColor.value !== 'none' && inputHex.value.trim() !== '') {
+                    alert('Please choose either a color from the dropdown or enter a hex code, not both.');
+                    errorFound = true;
+                }
                 // Check if both the dropdown and input field are not valid at the same time
                 if (dropdownColor.value === 'none' && inputHex.value.trim() === '') {
                     document.querySelector('.label-color').innerHTML = 'Select a color';
