@@ -27,6 +27,7 @@ function tools() {
     let zoomIn = document.querySelector('.zoom-in');
     let zoomOut = document.querySelector('.zoom-out');
     let drawing = false;
+    let isFilling = false;
     let eraserSize = 50;
     let currentTool = null; 
     let selectedShape = null;
@@ -144,12 +145,12 @@ function deactivateTool() {
 
     // Deactivate Fill
     canvas.removeEventListener('mousedown', startFill);
-    canvas.removeEventListener('mousemove', drawFill);
+    canvas.removeEventListener('mousemove', fillArea);
     canvas.removeEventListener('mouseup', stopFill);
     canvas.removeEventListener('mouseout', stopFill);
 
     canvas.removeEventListener('touchstart', startFill);
-    canvas.removeEventListener('touchmove', drawFill);
+    canvas.removeEventListener('touchmove', fillArea);
     canvas.removeEventListener('touchend', stopFill);
     canvas.removeEventListener('touchcancel', stopFill);
 
@@ -262,6 +263,9 @@ function activateShape() {
 
 function activateColor() {
     currentTool = 'color';
+        if (context) {
+        context.strokeStyle = selectColor; // This will now include both dropdown and hex colors
+    }
     canvas.addEventListener('mousedown', startColor);
     canvas.addEventListener('mousemove', drawColor);
     canvas.addEventListener('mouseup', stopColor);
@@ -276,12 +280,12 @@ function activateColor() {
 function activateFill() {
     currentTool = 'fill';
     canvas.addEventListener('mousedown', startFill);
-    canvas.addEventListener('mousemove', drawFill);
+    canvas.addEventListener('mousemove', fillArea);
     canvas.addEventListener('mouseup', stopFill);
     canvas.addEventListener('mouseout', stopFill);
 
     canvas.addEventListener('touchstart', startFill);
-    canvas.addEventListener('touchmove', drawFill);
+    canvas.addEventListener('touchmove', fillArea);
     canvas.addEventListener('touchend', stopFill);
     canvas.addEventListener('touchcancel', stopFill);
 }
@@ -388,6 +392,12 @@ function activateShapeTool() {
                 y: event.offsetY
             };
         }
+    }
+
+
+    function isValidHex(hex) {
+        // Check if the hex code matches the pattern for 3 or 6 digit hex colors
+        return /^#([0-9A-F]{3}){1,2}$/i.test(hex);
     }
     
 
@@ -529,10 +539,6 @@ function stopPencil() {
     }
 
         //color
-        function isValidHexCode(color) {
-            // Check for a valid hex code, allows #RRGGBB or #RGB format
-            return /^#([0-9A-F]{3}){1,2}$/i.test(color);
-        }
         
         function startColor(event) {
             drawing = true;
@@ -540,7 +546,8 @@ function stopPencil() {
             context.beginPath();
             context.moveTo(pos.x, pos.y);
         
-            if (isValidHexCode(selectColor)) {
+            // Call the correct function name: isValidHex
+            if (isValidHex(selectColor)) {
                 context.strokeStyle = selectColor;
                 context.fillStyle = selectColor;
             } else {
@@ -560,6 +567,7 @@ function stopPencil() {
             event.preventDefault();
         }
         
+        
         function drawColor(event) {
             if (!drawing) return;
             const pos = getEventPosition(event);
@@ -575,17 +583,23 @@ function stopPencil() {
             }
         }
 
-            //fill
-    function startFill(){
+            //fill  
 
-    }
+            
 
-    function drawFill() {
+            
 
-    }
+            
+
+
+            function startFill() {
+
+            }
+
+    
+    function fillArea() {}
 
     function stopFill() {
-        
     }
 
         //text
@@ -740,7 +754,7 @@ function modal(type) {
         `).join('')}
         </select>
         <label class='label-hex'>${colorObject.labelInput}</label>
-        <input type="text" placeholder="#000000" class='input-hex'>
+        <input type="text" placeholder="#000000" class='input-hex' maxlength="7" />
         `;
     } else if (type === 'text') {
         content = `
@@ -790,34 +804,37 @@ let errorFound = false;
             }
         }
 
-        if (type === 'color') {
-            if (dropdownColor && inputHex) {
+        if(type === 'color') {
+            if(dropdownColor && inputHex) {
+                // If both a dropdown color and hex code are selected
                 if(dropdownColor.value !== 'none' && inputHex.value.trim() !== '') {
                     alert('Please choose either a color from the dropdown or enter a hex code, not both.');
                     errorFound = true;
                 }
-                // Check if both the dropdown and input field are not valid at the same time
-                if (dropdownColor.value === 'none' && inputHex.value.trim() === '') {
+                // If neither a dropdown nor a valid hex code is selected
+                else if(dropdownColor.value === 'none' && inputHex.value.trim() === '') {
                     document.querySelector('.label-color').innerHTML = 'Select a color';
                     document.querySelector('.label-color').style.color = 'red';
                     document.querySelector('.label-hex').innerHTML = 'Type a valid hex code';
                     document.querySelector('.label-hex').style.color = 'red';
                     errorFound = true;
-                } else {
-                    // Reset error styling
-                    document.querySelector('.label-color').textContent = colorObject.label;
-                    document.querySelector('.label-color').style.color = '';
-                    document.querySelector('.label-hex').textContent = colorObject.labelInput;
-                    document.querySelector('.label-hex').style.color = '';
-        
-                    // Apply the selected color
-                    if (dropdownColor.value !== 'none') {
-                        selectColor = dropdownColor.value;
-                    } else if (inputHex.value.trim() !== '') {
-                        selectColor = inputHex.value.trim();
+                }
+                // If a hex code is provided, validate it
+                else if(inputHex.value.trim() !== '') {
+                    let hexColor = inputHex.value.trim();
+                    if(isValidHex(hexColor)) {
+                        selectColor = hexColor; // Apply the hex color
+                        document.body.removeChild(overlay);
+                        activateColor(); // Use the color on the canvas
+                    } else {
+                        document.querySelector('.label-hex').innerHTML = 'Invalid hex code. Use format #RRGGBB or #RGB';
+                        document.querySelector('.label-hex').style.color = 'red';
+                        errorFound = true;
                     }
-        
-                    // Remove the modal and apply the color
+                }
+                // If dropdown color is selected, apply it
+                else {
+                    selectColor = dropdownColor.value;
                     document.body.removeChild(overlay);
                     activateColor();
                 }
