@@ -11,7 +11,9 @@ window.addEventListener('resize', resizeCanvas);
 
 resizeCanvas();
 
-function tools() {
+
+
+  function tools() {
     const canvas = document.querySelector('#drawingCanvas');
     const context = canvas.getContext('2d');
     context.strokeStyle = 'black';
@@ -27,7 +29,7 @@ function tools() {
     let zoomIn = document.querySelector('.zoom-in');
     let zoomOut = document.querySelector('.zoom-out');
     let drawing = false;
-    let isFilling = false;
+    let filling = false;
     let eraserSize = 50;
     let currentTool = null; 
     let selectedShape = null;
@@ -583,102 +585,289 @@ function stopPencil() {
             }
         }
 
-            //fill  
+     //fill 
+function getMousePosition(event) {
+    const rect = canvas.getBoundingClientRect();
+    let x, y;
 
-            
+    if (event.type.includes('touch')) {
+        // Handle touch events
+        x = event.touches[0].clientX - rect.left;
+        y = event.touches[0].clientY - rect.top;
+    } else {
+        // Handle mouse events
+        x = event.clientX - rect.left;
+        y = event.clientY - rect.top;
+    }
 
-            
+    return [Math.floor(x), Math.floor(y)]; // Return rounded coordinates
+}
 
-            
+// Get the color of a specific pixel on the canvas at (x, y)
+function getPixelColor(x, y) {
+    // Ensure x and y are integers
+    const pixelData = context.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+    return pixelData; // Returns an array of RGBA values
+}
+
+// Set a specific pixel color on the canvas
+function setPixelColor(x, y, color) {
+    const imageData = context.createImageData(1, 1); // Create a 1x1 pixel image data object
+    imageData.data[0] = color[0]; // Red
+    imageData.data[1] = color[1]; // Green
+    imageData.data[2] = color[2]; // Blue
+    imageData.data[3] = color[3]; // Alpha (opacity)
+    context.putImageData(imageData, x, y); // Place the colored pixel back on the canvas
+}
+
+// Function to check if two colors match
+function colorsMatch(color1, color2) {
+    return color1[0] === color2[0] && color1[1] === color2[1] && color1[2] === color2[2] && color1[3] === color2[3];
+}
 
 
-            function startFill() {
+// Start the flood fill operation
+function startFill(event) {
+    if (filling) return;  // Prevent multiple fills at once
+    filling = true;
 
+    const [mouseX, mouseY] = getMousePosition(event);  // Get mouse/touch position
+
+    const targetColor = getPixelColor(mouseX, mouseY);  // Get the color of the clicked pixel
+    const fillColor = hexToRGBA(selectColor);  // Convert the selected color to RGBA
+
+    // Only proceed if the color to fill is different from the clicked pixel's color
+    if (!colorsMatch(targetColor, fillColor)) {
+        floodFill(mouseX, mouseY, targetColor, fillColor);  // Call the fill algorithm
+    }
+
+    stopFill();  // Stop the fill process after it is done
+}
+
+function floodFill(x, y, targetColor, fillColor) {
+    const stack = [[x, y]];  // Initialize a stack with the starting point
+    const width = canvas.width;
+    const height = canvas.height;
+
+    const processed = new Set();  // Keep track of processed pixels
+
+    // Ensure that we stay within the canvas bounds
+    function isInBounds(x, y) {
+        return x >= 0 && y >= 0 && x < width && y < height;
+    }
+
+    function processNextChunk() {
+        const batchSize = 100;  // Process 100 pixels at a time for performance
+        let count = 0;
+
+        while (stack.length > 0 && count < batchSize) {
+            const [currentX, currentY] = stack.pop();
+
+            if (!isInBounds(currentX, currentY)) {
+                continue;  // Skip if out of bounds
             }
 
-    
-    function fillArea() {}
+            const pixelKey = `${currentX},${currentY}`;
+            if (processed.has(pixelKey)) {
+                continue;  // Skip if already processed
+            }
 
-    function stopFill() {
-    }
+            processed.add(pixelKey);  // Mark the pixel as processed
 
-        //text
-        function startText(){
+            // Get the current pixel's color
+            const currentColor = getPixelColor(currentX, currentY);
 
-        }
-    
-        function drawText() {
-    
-        }
-    
-        function stopText() {
-            
-        }
+            // If the current color matches the target color, fill the pixel
+            if (colorsMatch(currentColor, targetColor)) {
+                setPixelColor(currentX, currentY, fillColor);
 
-            //undo
-    function startUndo(){
+                // Add neighboring pixels to the stack
+                stack.push([currentX + 1, currentY]);  // Right
+                stack.push([currentX - 1, currentY]);  // Left
+                stack.push([currentX, currentY + 1]);  // Down
+                stack.push([currentX, currentY - 1]);  // Up
+            }
 
-    }
-
-    function drawUndo() {
-
-    }
-
-    function stopUndo() {
-        
-    }
-
-        //redo
-        function startRedo(){
-
-        }
-    
-        function drawRedo() {
-    
-        }
-    
-        function stopRedo() {
-            
+            count++;
         }
 
-            //clear
-    function startClear(){
-
+        // If there are still pixels to process, continue the flood fill
+        if (stack.length > 0) {
+            setTimeout(processNextChunk, 0);  // Continue processing in the next event loop cycle
+        } else {
+            filling = false;  // Indicate that the filling is complete
+        }
     }
 
-    function drawClear() {
+    processNextChunk();  // Start the fill process
+}
 
+// The flood fill algorithm (iterative)
+function fillArea(x, y, targetColor, fillColor) {
+    const stack = [[x, y]]; // Initialize the stack for flood fill
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    while (stack.length > 0) {
+        const [currentX, currentY] = stack.pop();
+
+        // Ensure we are within the canvas bounds
+        if (currentX < 0 || currentY < 0 || currentX >= width || currentY >= height) {
+            continue;
+        }
+
+        // Get the color of the current pixel
+        const currentColor = getPixelColor(currentX, currentY);
+
+        // If the current pixel matches the target color, fill it and add its neighbors to the stack
+        if (colorsMatch(currentColor, targetColor)) {
+            setPixelColor(currentX, currentY, fillColor);
+
+            // Add neighboring pixels (left, right, top, bottom) to the stack
+            stack.push([currentX - 1, currentY]);
+            stack.push([currentX + 1, currentY]);
+            stack.push([currentX, currentY - 1]);
+            stack.push([currentX, currentY + 1]);
+        }
     }
+}
 
-    function stopClear() {
-        
-    }
+// Stop the fill operation
+function stopFill() {
+    filling = false; // Reset the flag to allow future fills
+    console.log("stopFill fired.");
+}
 
-        //zoom in
-        function startZoomIn(){
-
+    // Helper function to get the mouse or touch position relative to the canvas
+    function getMousePosition(event) {
+        const rect = canvas.getBoundingClientRect(); // Get the bounding box of the canvas
+    
+        let x, y;
+        if (event.type === 'touchstart' || event.type === 'touchmove') {
+            // For touch events, use touches[0] to get the first touch point
+            x = event.touches[0].clientX - rect.left;
+            y = event.touches[0].clientY - rect.top;
+        } else {
+            // For mouse events, use clientX and clientY
+            x = event.clientX - rect.left;
+            y = event.clientY - rect.top;
         }
     
-        function drawZoomIn() {
-    
-        }
-    
-        function stopZoomIn() {
-            
-        }
-
-            //zoom out
-    function startZoomOut(){
-
+        console.log("Mouse or touch position:", x, y);
+        return [x, y];
     }
 
-    function drawZoomOut() {
+// Helper function to compare two RGBA colors
+function colorsMatch(color1, color2) {
+    return (
+        color1[0] === color2[0] &&
+        color1[1] === color2[1] &&
+        color1[2] === color2[2] &&
+        color1[3] === color2[3]
+    );
+}
 
-    }
+// Helper function to convert a hex color to RGBA
+function colorsMatch(color1, color2) {
+    console.log("Comparing colors: ", color1, color2);
+    return (
+        color1[0] === color2[0] &&
+        color1[1] === color2[1] &&
+        color1[2] === color2[2] &&
+        color1[3] === color2[3]
+    );
+}
 
-    function stopZoomOut() {
-        
-    }
+function hexToRGBA(hex) {
+    console.log("Converting hex to RGBA: ", hex);
+    let bigint = parseInt(hex.slice(1), 16);
+    let r = (bigint >> 16) & 255;
+    let g = (bigint >> 8) & 255;
+    let b = bigint & 255;
+    return [r, g, b, 255]; // Returns an array in RGBA format
+}
+
+     //text
+     function startText(){
+
+     }
+ 
+     function drawText() {
+ 
+     }
+ 
+     function stopText() {
+         
+     }
+
+         //undo
+ function startUndo(){
+
+ }
+
+ function drawUndo() {
+
+ }
+
+ function stopUndo() {
+     
+ }
+
+     //redo
+     function startRedo(){
+
+     }
+ 
+     function drawRedo() {
+ 
+     }
+ 
+     function stopRedo() {
+         
+     }
+
+         //clear
+ function startClear(){
+
+ }
+
+ function drawClear() {
+
+ }
+
+ function stopClear() {
+     
+ }
+
+     //zoom in
+     function startZoomIn(){
+
+     }
+ 
+     function drawZoomIn() {
+ 
+     }
+ 
+     function stopZoomIn() {
+         
+     }
+
+         //zoom out
+ function startZoomOut(){
+
+ }
+
+ function drawZoomOut() {
+
+ }
+
+ function stopZoomOut() {
+     
+ }
+
+
+
 
     //objects and modal function
 
@@ -832,6 +1021,8 @@ let errorFound = false;
                         errorFound = true;
                     }
                 }
+
+
                 // If dropdown color is selected, apply it
                 else {
                     selectColor = dropdownColor.value;
@@ -842,7 +1033,13 @@ let errorFound = false;
         }
 
 
-  
+        if(type === 'fill') {
+            if(!errorFound) {
+                console.log("Apply button clicked.");
+                startFill(event);
+                activateFill();
+            }
+        }
         
     });
 
@@ -855,3 +1052,5 @@ let errorFound = false;
 }
 
 tools();
+  
+  
