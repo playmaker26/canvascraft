@@ -31,7 +31,9 @@ resizeCanvas();
     let drawing = false;
     let filling = false;
     let isTextToolActive = false;
+    let isUndoing = false;
     let isTypingActive = false;
+    let isClearing = false;
     let cursorX = 0, cursorY = 0;
     let selectedFontSize = null;
     let currentText = '';
@@ -42,7 +44,12 @@ resizeCanvas();
     let selectShape = 'none';
     let selectColor = 'none';
     let startX, startY;
-    
+    let historyStack = [];
+    let redoStack = [];
+    const MAX_HISTORY = 10;
+    let zoomLevel = 1;  // Initial zoom level
+    const MAX_ZOOM = 5;
+    const MIN_ZOOM = 1;
 // Fixed Event Listeners
 pencil.addEventListener('click', () => {
     deactivateTool();
@@ -194,15 +201,15 @@ function deactivateTool() {
     canvas.removeEventListener('touchcancel', stopRedo);
 
     // Deactivate Clear
-    canvas.removeEventListener('mousedown', startClear);
-    canvas.removeEventListener('mousemove', drawClear);
-    canvas.removeEventListener('mouseup', stopClear);
-    canvas.removeEventListener('mouseout', stopClear);
+    canvas.removeEventListener('mousedown', clearCanvas);
+    canvas.removeEventListener('mousemove', clearCanvas);
+    canvas.removeEventListener('mouseup', clearCanvas);
+    canvas.removeEventListener('mouseout', clearCanvas);
 
-    canvas.removeEventListener('touchstart', startClear);
-    canvas.removeEventListener('touchmove', drawClear);
-    canvas.removeEventListener('touchend', stopClear);
-    canvas.removeEventListener('touchcancel', stopClear);
+    canvas.removeEventListener('touchstart', clearCanvas);
+    canvas.removeEventListener('touchmove', clearCanvas);
+    canvas.removeEventListener('touchend', clearCanvas);
+    canvas.removeEventListener('touchcancel', clearCanvas);
 
     // Deactivate ZoomIn
     canvas.removeEventListener('mousedown', startZoomIn);
@@ -337,15 +344,15 @@ function activateRedo() {
 
 function activateClear() {
     currentTool = 'clear';
-    canvas.addEventListener('mousedown', startClear);
-    canvas.addEventListener('mousemove', drawClear);
-    canvas.addEventListener('mouseup', stopClear);
-    canvas.addEventListener('mouseout', stopClear);
+    canvas.addEventListener('mousedown', clearCanvas);
+    canvas.addEventListener('mousemove', clearCanvas);
+    canvas.addEventListener('mouseup', clearCanvas);
+    canvas.addEventListener('mouseout', clearCanvas);
 
-    canvas.addEventListener('touchstart', startClear);
-    canvas.addEventListener('touchmove', drawClear);
-    canvas.addEventListener('touchend', stopClear);
-    canvas.addEventListener('touchcancel', stopClear);
+    canvas.addEventListener('touchstart', clearCanvas);
+    canvas.addEventListener('touchmove', clearCanvas);
+    canvas.addEventListener('touchend', clearCanvas);
+    canvas.addEventListener('touchcancel', clearCanvas);
 }
 
 function activateZoomIn() {
@@ -430,6 +437,7 @@ function stopPencil() {
     if (drawing) {
         context.closePath();
         drawing = false;
+        saveCanvasState(); 
     }
 }
     
@@ -450,6 +458,7 @@ function stopPencil() {
     
         function stopEraser() {
             drawing = false;
+            saveCanvasState(); 
         }
 
 
@@ -542,6 +551,7 @@ function stopPencil() {
         const ctx = canvas.getContext('2d');
         drawing = false;
         event.preventDefault();
+        saveCanvasState(); 
     }
 
         //color
@@ -586,6 +596,7 @@ function stopPencil() {
             if (drawing) {
                 context.closePath();
                 drawing = false;
+                saveCanvasState(); 
             }
         }
 
@@ -741,6 +752,7 @@ function fillArea(x, y, targetColor, fillColor) {
 function stopFill() {
     filling = false; // Reset the flag to allow future fills
     console.log("stopFill fired.");
+    saveCanvasState(); 
 }
 
     // Helper function to get the mouse or touch position relative to the canvas
@@ -837,27 +849,101 @@ function hexToRGBA(hex) {
             context.fillStyle = 'black';
             context.fillText(currentText, cursorX, cursorY);
             console.log(`Stopped text input at: (${cursorX}, ${cursorY})`);
+            saveCanvasState(); 
         }
     }
     
 
          //undo
- function startUndo(){
-
- }
-
- function drawUndo() {
-
- }
-
- function stopUndo() {
-     
- }
-
+         function saveCanvasState() {
+            if (historyStack.length >= MAX_HISTORY) {
+                historyStack.shift();  // Remove the oldest state if we exceed the limit
+            }
+            historyStack.push(context.getImageData(0, 0, canvas.width, canvas.height));
+        }
+        
+        function startUndo(event) {
+            event.preventDefault();
+            
+            // Check if there's any undo history left
+            if (historyStack.length === 0) {
+                alert('There is nothing else to undo');
+                return;  // Stop further processing if there's nothing to undo
+            }
+        
+            const [mouseX, mouseY] = getMousePosition(event);
+        
+            // Begin undo process
+            isUndoing = true;
+            console.log(`Undo started at: (${mouseX}, ${mouseY})`);
+        
+            applyUndoAt(mouseX, mouseY);  // Apply undo at the clicked position
+        }
+        
+        function drawUndo(event) {
+            // If we want to allow dragging across areas to undo multiple regions:
+            if (isUndoing) {
+                const [mouseX, mouseY] = getMousePosition(event);
+                applyUndoAt(mouseX, mouseY);  // Undo for the dragged area
+                console.log(`Undo applied at: (${mouseX}, ${mouseY})`);
+            }
+        }
+        
+        function applyUndoAt(x, y) {
+            if (historyStack.length > 0) {
+                // Save the current canvas state before undoing
+                const currentState = context.getImageData(0, 0, canvas.width, canvas.height);
+                redoStack.push(currentState);  // Push current state to redoStack for potential redo
+        
+                // Get the last saved state from the undo history
+                const previousState = historyStack.pop();  // Pop the last saved state from the undo stack
+        
+                // Restore the previous canvas state
+                context.putImageData(previousState, 0, 0);  // Apply the saved state to the entire canvas
+        
+                console.log("Undo applied to the entire canvas.");
+            } else {
+                alert('There is nothing else to undo.');
+                console.log("No previous state to undo.");
+            }
+        }
+        
+        function stopUndo(event) {
+            isUndoing = false;
+            console.log("Undo stopped.");
+        }
+        
      //redo
-     function startRedo(){
-
-     }
+     function applyRedoAt() {
+        if (redoStack.length > 0) {
+            // Save the current canvas state before redoing
+            const currentState = context.getImageData(0, 0, canvas.width, canvas.height);
+            historyStack.push(currentState);  // Push current state back to the undo stack
+    
+            // Get the last saved state from the redo history
+            const redoState = redoStack.pop();  // Pop the last saved state from the redo stack
+    
+            // Restore the redo state
+            context.putImageData(redoState, 0, 0);  // Apply the saved state to the entire canvas
+    
+            console.log("Redo applied to the entire canvas.");
+        } else {
+            alert('There is nothing else to redo.');
+            console.log("No previous state to redo.");
+        }
+    }
+    
+    function startRedo(event) {
+        event.preventDefault();
+    
+        // Check if there's any redo history left
+        if (redoStack.length > 0) {
+            console.log("Redo started.");
+            applyRedoAt();  // Apply the redo for the last undone state
+        } else {
+            alert('There is nothing else to redo.');
+        }
+    }
  
      function drawRedo() {
  
@@ -868,6 +954,16 @@ function hexToRGBA(hex) {
      }
 
          //clear
+         function clearCanvas() {
+            // Clear the entire canvas by drawing a blank rectangle over it
+            context.clearRect(0, 0, canvas.width, canvas.height);
+        
+            // Save the cleared state to the history stack
+            saveCanvasState();
+        
+            console.log("Canvas cleared.");
+        }
+
  function startClear(){
 
  }
@@ -881,10 +977,32 @@ function hexToRGBA(hex) {
  }
 
      //zoom in
-     function startZoomIn(){
-
-     }
- 
+     function zoomInToArea(mouseX, mouseY) {
+        zoomLevel += 1;  // Increase zoom level
+    
+        // Save current canvas state before zooming
+        saveCanvasState();
+    
+        // Apply zoom
+        const scaleFactor = 1 / zoomLevel;
+        const offsetX = (canvas.width / 2 - mouseX * scaleFactor) * zoomLevel;
+        const offsetY = (canvas.height / 2 - mouseY * scaleFactor) * zoomLevel;
+    
+        context.setTransform(scaleFactor, 0, 0, scaleFactor, offsetX, offsetY);
+    
+        console.log(`Zoomed in at (${mouseX}, ${mouseY}), current zoom level: ${zoomLevel}`);
+    }
+    
+    function startZoomIn(event) {
+        // Check if the zoom level is below the maximum zoom
+        if (zoomLevel < MAX_ZOOM) {
+            const [mouseX, mouseY] = getMousePosition(event);
+            zoomInToArea(mouseX, mouseY); // Corrected function reference
+        } else {
+            alert('Maximum zoom level reached');
+        }
+    }
+    
      function drawZoomIn() {
  
      }
@@ -894,9 +1012,15 @@ function hexToRGBA(hex) {
      }
 
          //zoom out
- function startZoomOut(){
-
- }
+         function startZoomOut(event) {
+            // Check if the zoom level is above the minimum zoom
+            if (zoomLevel > MIN_ZOOM) {
+                const [mouseX, mouseY] = getMousePosition(event);
+                zoomOut(mouseX, mouseY);
+            } else {
+                alert('Minimum zoom level reached');
+            }
+        }
 
  function drawZoomOut() {
 
