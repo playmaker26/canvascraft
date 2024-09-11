@@ -30,11 +30,15 @@ resizeCanvas();
     let zoomOut = document.querySelector('.zoom-out');
     let drawing = false;
     let filling = false;
+    let isTextToolActive = false;
+    let isTypingActive = false;
+    let cursorX = 0, cursorY = 0;
+    let selectedFontSize = null;
+    let currentText = '';
     let eraserSize = 50;
     let currentTool = null; 
     let selectedShape = null;
     let selectedColor = null;
-    let selectedFontSize = null;
     let selectShape = 'none';
     let selectColor = 'none';
     let startX, startY;
@@ -789,17 +793,53 @@ function hexToRGBA(hex) {
 }
 
      //text
-     function startText(){
-
-     }
+     function startText(event) {
+        event.preventDefault();
+        const [mouseX, mouseY] = getMousePosition(event);
+        cursorX = mouseX;
+        cursorY = mouseY;
+        isTypingActive = true;
+    
+        // Prompt the user for text input
+        currentText = prompt("Enter the text to display:");
+        if (!currentText) {
+            isTypingActive = false;
+            return;
+        }
+    
+        if (selectedFontSize) {
+            context.font = `${selectedFontSize} Arial`;
+            context.strokeStyle = 'black';  // Set text color to black
+            context.fillStyle = 'black';    // Ensure fill color is also black
+        }
+    
+        console.log(`Started text input at: (${cursorX}, ${cursorY})`);
+        drawText(); // Draw text immediately
+    }
+    
  
-     function drawText() {
+    function drawText() {
+        if (isTypingActive) {
+            context.clearRect(0, 0, canvas.width, canvas.height); // Optional: Clear entire canvas first
+            context.font = `${selectedFontSize} Arial`;
+            context.strokeStyle = 'black';
+            context.fillStyle = 'black';
+            context.fillText(currentText, cursorX, cursorY);
+            console.log(`Drawing text at: (${cursorX}, ${cursorY})`);
+        }
+    }
  
-     }
- 
-     function stopText() {
-         
-     }
+    function stopText(event) {
+        if (isTypingActive) {
+            isTypingActive = false;
+            context.font = `${selectedFontSize} Arial`;
+            context.strokeStyle = 'black';
+            context.fillStyle = 'black';
+            context.fillText(currentText, cursorX, cursorY);
+            console.log(`Stopped text input at: (${cursorX}, ${cursorY})`);
+        }
+    }
+    
 
          //undo
  function startUndo(){
@@ -1038,6 +1078,22 @@ let errorFound = false;
                 console.log("Apply button clicked.");
                 startFill(event);
                 activateFill();
+            }
+        }
+
+        if(type === 'text') {
+            if(selectFont) {
+                if(selectFont.value === 'none') {
+                    document.querySelector('.label-font').innerHTML= 'Choose a font size';
+                    document.querySelector('.label-font').style.color = 'red';
+                    errorFound = true;
+                }else {
+                    document.querySelector('.label-font').textContent = fontObject.label;
+                    document.querySelector('.label-font').style.color = '';
+                    selectedFontSize = selectFont.value;
+                    document.body.removeChild(overlay);
+                    activateText();
+                }
             }
         }
         
